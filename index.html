@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Animal Kingdom Casino V2</title>
+
+<style>
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select:none;
+}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  background:#0d0d18;
+  color:white;
+  overflow-x:hidden;
+}
+header{
+  padding:10px;
+  background:#15152a;
+  border-bottom:1px solid #222;
+  position:sticky; top:0; z-index:50;
+}
+.topRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+.logo{
+  font-weight:900;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.wallet{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  font-size:14px;
+}
+.subRow{
+  margin-top:8px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.badge{
+  padding:6px 10px;
+  border:1px solid #333;
+  border-radius:999px;
+  background:#10102a;
+  font-size:13px;
+  color:#d6d6ff;
+}
+.expWrap{
+  flex:1;
+  min-width:180px;
+}
+.expBar{
+  width:100%;
+  height:10px;
+  background:#2a2a44;
+  border-radius:999px;
+  overflow:hidden;
+  border:1px solid #333;
+}
+.expFill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,#2bd6ff,#a86bff);
+  transition:width 0.25s;
+}
+.expText{
+  margin-top:4px;
+  font-size:12px;
+  color:#b9b9dd;
+  display:flex;
+  justify-content:space-between;
+}
+.main{
+  padding:15px;
+  max-width:720px;
+  margin:0 auto;
+}
+.screen{
+  display:none;
+}
+.screen.active{
+  display:block;
+}
+.card{
+  background:#12122a;
+  border:1px solid #2a2a44;
+  border-radius:14px;
+  padding:12px;
+  margin:10px 0;
+}
+h2,h3{ margin:8px 0 10px; }
+button{
+  padding:10px 12px;
+  margin:6px 6px 0 0;
+  font-size:16px;
+  background:#222;
+  color:white;
+  border:1px solid #444;
+  border-radius:12px;
+}
+button:active{
+  transform:scale(0.97);
+  box-shadow:0 0 15px rgba(43,214,255,0.6);
+}
+.smallBtn{ font-size:14px; padding:8px 10px; border-radius:10px; }
+.hidden{ display:none; }
+
+.hpbar{
+  width:100%;
+  height:18px;
+  background:#333;
+  border-radius:999px;
+  overflow:hidden;
+  border:1px solid #444;
+  margin-top:8px;
+}
+.hpfill{
+  height:100%;
+  background:linear-gradient(90deg,#ff4d6d,#ffb703);
+  width:100%;
+  transition:width 0.25s;
+}
+
+.toast{
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#000;
+  padding:10px 14px;
+  border:1px solid #555;
+  border-radius:14px;
+  z-index:9999;
+  font-size:14px;
+  max-width:90vw;
+  opacity:0;
+  transition:opacity 0.15s;
+}
+.toast.show{ opacity:0.92; }
+.toast.good{ border-color:#2aff9a; }
+.toast.bad{ border-color:#ff4d6d; }
+
+.modalBack{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.6);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:9998;
+  padding:16px;
+}
+.modalBack.show{ display:flex; }
+.modal{
+  width:min(520px, 95vw);
+  background:#0f0f1f;
+  border:1px solid #2a2a44;
+  border-radius:16px;
+  padding:14px;
+}
+.modal h3{ margin:0 0 8px; }
+.modal .desc{ color:#cfcfe9; font-size:14px; line-height:1.4; }
+.modal .reward{ margin-top:10px; color:#9ef; font-size:14px; }
+.modal .row{ display:flex; gap:8px; margin-top:12px; justify-content:flex-end; }
+
+.achList{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.achItem{
+  padding:10px;
+  border:1px solid #2a2a44;
+  border-radius:12px;
+  background:#10102a;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:10px;
+}
+.achName{ font-weight:800; }
+.achDesc{ font-size:13px; color:#c7c7e6; margin-top:2px; }
+.achRight{ font-size:12px; color:#a8a8c7; white-space:nowrap; }
+.floating{
+  position:fixed;
+  pointer-events:none;
+  z-index:9997;
+  animation:floatUp 1s ease-out forwards;
+}
+@keyframes floatUp{
+  0%{ opacity:1; transform:translate(-50%,0) scale(1); }
+  100%{ opacity:0; transform:translate(-50%,-60px) scale(1.05); }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="topRow">
+    <div class="logo" id="logo">🐾 Animal Casino 👑</div>
+    <div class="wallet">
+      <div>💰 <span id="gold">0</span></div>
+      <div>💎 <span id="gems">0</span></div>
+      <div>🎟️ <span id="tickets">0</span></div>
+    </div>
+  </div>
+
+  <div class="subRow">
+    <div class="badge">Lv <span id="level">1</span></div>
+    <div class="expWrap">
+      <div class="expBar"><div class="expFill" id="expFill"></div></div>
+      <div class="expText">
+        <span id="expText">EXP 0 / 50</span>
+        <span id="feverText">Fever 0%</span>
+      </div>
+    </div>
+    <button class="smallBtn" onclick="go('progress')">📌 진행/업적</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- LOBBY -->
+  <div id="lobby" class="screen active">
+    <div class="card">
+      <h2>🏠 로비</h2>
+      <button onclick="go('clicker')">💰 클릭커</button>
+      <button onclick="go('slot')">🎰 슬롯</button>
+      <button onclick="go('shop')">🛒 상점</button>
+      <button onclick="go('inventory')">🎒 창고</button>
+      <button onclick="go('battle')">⚔ 전투</button>
+    </div>
+
+    <div class="card">
+      <h3>🔥 오늘의 추천 루프</h3>
+      <div style="color:#cfcfe9;font-size:14px;line-height:1.5">
+        1) 클릭커로 💰 모으기 → 2) 슬롯으로 버프/잭팟 → 3) 전투로 보상 → 4) 상점 강화 → 반복
+      </div>
+    </div>
+  </div>
+
+  <!-- CLICKER -->
+  <div id="clicker" class="screen">
+    <div class="card">
+      <h2>💰 클릭커</h2>
+      <button onclick="clickGold(event)">💰 탭</button>
+      <div style="margin-top:8px;color:#cfcfe9">
+        자동수익: <b><span id="idleRate">0</span></b> /초
+      </div>
+      <button onclick="buyIdle()">자동 업그레이드</button>
+      <div style="margin-top:10px;color:#a8a8c7;font-size:13px">
+        크리티컬 확률: <span id="critText">10%</span>
+      </div>
+      <button class="smallBtn" onclick="go('lobby')">⬅ 로비</button>
+    </div>
+  </div>
+
+  <!-- SLOT -->
+  <div id="slot" class="screen">
+    <div class="card">
+      <h2>🎰 슬롯</h2>
+      <button onclick="spinSlot()">100💰 돌리기</button>
+      <button class="smallBtn" onclick="spinSlot(10)">10회 (900💰)</button>
+      <div id="slotResult" style="margin-top:10px;font-size:22px"></div>
+      <div style="margin-top:8px;color:#a8a8c7;font-size:13px">
+        3개 일치 시 보상 + 이펙트. 🔥🔥🔥 = 10초 더블, 👑👑👑 = 대박
+      </div>
+      <button class="smallBtn" onclick="go('lobby')">⬅ 로비</button>
+    </div>
+
+    <div class="card">
+      <h3>🎲 동물 가챠</h3>
+      <button onclick="drawGacha()">1회 (300💰)</button>
+      <button class="smallBtn" onclick="drawGacha(10)">10회 (2700💰)</button>
+      <div id="gachaResult" style="margin-top:10px;color:#cfcfe9"></div>
+      <div style="margin-top:6px;color:#a8a8c7;font-size:13px">
+        SR 이상 10연 보장, SSR 천장 80
+      </div>
+      <button class="smallBtn" onclick="go('lobby')">⬅ 로비</button>
+    </div>
+  </div>
+
+  <!-- SHOP -->
+  <div id="shop" class="screen">
+    <div class="card">
+      <h2>🛒 상점</h2>
+      <div style="color:#cfcfe9;font-size:14px;line-height:1.55">
+        강화는 영구 적용. 성장 체감 크게 주기.
+      </div>
+      <button onclick="buyCrit()">크리 확률 +1% (500💰)</button>
+      <button onclick="buyFeverBoost()">피버 충전 +20% (800💰)</button>
+      <button onclick="buyBattleBoost()">전투 보상 +10% (700💰)</button>
+      <div style="margin-top:10px;color:#a8a8c7;font-size:13px">
+        피버 충전 보너스: <span id="feverBoostText">0%</span><br>
+        전투 보상 보너스: <span id="battleBoostText">0%</span>
+      </div>
+      <button class="smallBtn" onclick="go('lobby')">⬅ 로비</button>
+    </div>
+  </div>
+
+  <!-- INVENTORY -->
+  <div id="inventory" class="screen">
+    <div class="card">
+      <h2>🎒 창고</h2>
+      <div style="color:#a8a8c7;font-size:13px;margin-bottom:8px">
+        동물 장착 시 패시브 적용 (클릭/전투 보너스)
+      </div>
+      <div id="equippedBox" class="card" style="background:#10102a;margin:0 0 10px">
+        장착: <b id="equippedText">없음</b>
+      </div>
+      <div id="inventoryList">비어 있음</div>
+      <button class="smallBtn" onclick="go('lobby')">⬅ 로비</button>
+    </div>
+  </div>
+
+  <!-- BATTLE -->
+  <div id="battle" class="screen">
+    <div class="card">
+      <h2>⚔ 전투</h2>
+      <button onclick="battle()">전투 시작</button>
+      <div class="hpbar"><div id="enemyHP" class="hpfill"></div></div>
+      <div id="battleLog" style="margin-top:10px;color:#cfcfe9"></div>
+      <div style="margin-top:6px;color:#a8a8c7;font-size:13px">
+        승리 보상: 💰 + EXP + (낮은 확률로 🎟️/💎)
+      </div>
+      <button class="smallBtn" onclick="go('lobby')">⬅ 로비</button>
+    </div>
+  </div>
+
+  <!-- PROGRESS / ACHIEVEMENTS -->
+  <div id="progress" class="screen">
+    <div class="card">
+      <h2>📌 진행 / 업적</h2>
+      <div style="color:#cfcfe9;font-size:14px;line-height:1.55">
+        숨겨진 업적은 달성 전까지 <b>???</b>로 보임. 달성하면 정체 공개 + 보상 지급.
+      </div>
+
+      <div style="margin-top:12px;color:#a8a8c7;font-size:13px">
+        누적 클릭: <span id="statClicks">0</span> / 크리: <span id="statCrits">0</span> / 슬롯: <span id="statSlots">0</span> / 잭팟: <span id="statJackpots">0</span><br>
+        전투 승리: <span id="statWins">0</span> / 누적 획득 골드: <span id="statGoldTotal">0</span>
+      </div>
+
+      <h3 style="margin-top:14px">🏆 업적</h3>
+      <div id="achList" class="achList"></div>
+
+      <button class="smallBtn" onclick="go('lobby')">⬅ 로비</button>
+    </div>
+  </div>
+
+  <!-- DEV PANEL (hidden gate) -->
+  <div id="devPanel" class="screen hidden">
+    <div class="card">
+      <h2>🧪 관리자 패널</h2>
+      <button onclick="cheatAddGold(100000)">+100000💰</button>
+      <button onclick="cheatAddGems(1000)">+1000💎</button>
+      <button onclick="cheatAddTickets(100)">+100🎟️</button>
+      <button onclick="cheatForceJackpot()">슬롯 👑👑👑</button>
+      <button onclick="cheatForceSSR()">가챠 SSR</button>
+      <button onclick="cheatReset()">데이터 초기화</button>
+      <button class="smallBtn" onclick="go('lobby')">⬅ 로비</button>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast" class="toast"></div>
+
+<div id="modalBack" class="modalBack" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3 id="modalTitle">Title</h3>
+    <div class="desc" id="modalDesc">Desc</div>
+    <div class="reward" id="modalReward"></div>
+    <div class="row">
+      <button class="smallBtn" onclick="hideModal()">확인</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------------------- CONFIG ----------------------
+const CONFIG = {
+  clickBase: 1,
+  critMulti: 5,
+
+  idleBasePerLevel: 0.5,
+  idleBaseCost: 15,
+  idleGrowth: 1.4,
+
+  slotCost: 100,
+  slotCostTen: 900,
+
+  gachaCost: 300,
+  gachaCostTen: 2700,
+  gachaRates: { N: 70, R: 25, SR: 4.5, SSR: 0.5 },
+  gachaPitySSR: 80,         // hard pity
+  gachaGuaranteeSR10: true, // 10-pull guarantee SR+
+
+  feverNeed: 100,
+  feverDurationMs: 10000,
+
+  // EXP curve (simple)
+  expBaseNeed: 50,      // level 1 -> 2
+  expGrowth: 1.25       // nextExp = base * growth^(level-1)
+};
+
+// ---------------------- STATE ----------------------
+let state = {
+  gold: 0,
+  gems: 0,
+  tickets: 0,
+
+  idleLevel: 0,
+  critChance: 0.10,
+
+  fever: 0,
+  feverChargeBonus: 0,     // +% charge
+  battleRewardBonus: 0,    // +% gold reward
+
+  buffUntil: 0,
+
+  level: 1,
+  exp: 0,
+
+  gachaPity: 0,
+  gachaSinceSR: 0,
+
+  // inventory
+  animals: [],             // {id, name, rarity, emoji, clickBonus, battleBonus}
+  equippedAnimalId: null,
+
+  // stats for achievements
+  stats: {
+    clicks: 0,
+    crits: 0,
+    slots: 0,
+    jackpots: 0,
+    battles: 0,
+    wins: 0,
+    goldEarnedTotal: 0,
+    spendTotal: 0,
+    gachaPulls: 0
+  },
+
+  achievements: {},        // id: true
+  lastSave: Date.now()
+};
+
+// ---------------------- SAVE/LOAD (with offline gold) ----------------------
+function save(){
+  state.lastSave = Date.now();
+  localStorage.setItem("casinoV2_full", JSON.stringify(state));
+}
+
+function load(){
+  const raw = localStorage.getItem("casinoV2_full");
+  if(!raw) return;
+
+  try{
+    const prev = JSON.parse(raw);
+    state = { ...state, ...prev };
+
+    // Offline income (cap to avoid insane gains)
+    const offlineSec = Math.min(3600 * 8, Math.floor((Date.now() - (state.lastSave || Date.now())) / 1000)); // max 8h
+    if(offlineSec > 2){
+      const gain = offlineSec * getIdleIncome();
+      addGold(gain, {silent:true, source:"offline"});
+      toast(`오프라인 수익 +${Math.floor(gain)}💰`, "good");
+    }
+  }catch(e){
+    // ignore corrupted save
+  }
+}
+load();
+
+// ---------------------- UI HELPERS ----------------------
+const $ = (id)=>document.getElementById(id);
+
+function go(screen){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $(screen).classList.add("active");
+  if(screen === "inventory") renderInventory();
+  if(screen === "progress") { renderAchievements(); renderStats(); }
+}
+
+function updateUI(){
+  $("gold").innerText = Math.floor(state.gold);
+  $("gems").innerText = state.gems;
+  $("tickets").innerText = state.tickets;
+  $("idleRate").innerText = getIdleIncome().toFixed(1);
+  $("critText").innerText = Math.round(state.critChance * 100) + "%";
+  $("feverText").innerText = `Fever ${Math.min(100, Math.floor(state.fever))}%`;
+  $("level").innerText = state.level;
+
+  const need = expNeed(state.level);
+  $("expText").innerText = `EXP ${Math.floor(state.exp)} / ${need}`;
+  $("expFill").style.width = `${Math.min(100, (state.exp / need) * 100)}%`;
+
+  $("feverBoostText").innerText = `${state.feverChargeBonus}%`;
+  $("battleBoostText").innerText = `${state.battleRewardBonus}%`;
+}
+
+function toast(msg, type=""){
+  const el = $("toast");
+  el.className = "toast";
+  if(type) el.classList.add(type);
+  el.textContent = msg;
+  el.classList.add("show");
+  setTimeout(()=> el.classList.remove("show"), 1200);
+}
+
+function showModal(title, desc, rewardText=""){
+  $("modalTitle").innerText = title;
+  $("modalDesc").innerText = desc;
+  $("modalReward").innerText = rewardText ? `보상: ${rewardText}` : "";
+  $("modalBack").classList.add("show");
+}
+
+function hideModal(){
+  $("modalBack").classList.remove("show");
+}
+function closeModal(e){
+  if(e.target.id === "modalBack") hideModal();
+}
+
+// Floating text
+function floatText(text, x=window.innerWidth/2, y=window.innerHeight/2){
+  const el = document.createElement("div");
+  el.className = "floating";
+  el.innerText = text;
+  el.style.left = x + "px";
+  el.style.top = y + "px";
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 1000);
+}
+
+// Screen shake
+function screenShake(ms=140){
+  const b = document.body;
+  b.style.transition = "transform 0.05s";
+  b.style.transform = "translateX(5px)";
+  setTimeout(()=> b.style.transform = "translateX(-5px)", 50);
+  setTimeout(()=> b.style.transform = "translateX(0px)", ms);
+}
+
+// Emoji burst particles
+function burst(emoji="✨", n=22){
+  for(let i=0;i<n;i++){
+    const el = document.createElement("div");
+    el.innerText = emoji;
+    el.style.position = "fixed";
+    el.style.left = "50%";
+    el.style.top = "45%";
+    el.style.fontSize = "22px";
+    el.style.zIndex = 9997;
+    const dx = (Math.random()*240 - 120);
+    const dy = (Math.random()*240 - 120);
+    el.style.transform = `translate(${dx}px, ${dy}px)`;
+    el.style.transition = "transform 0.8s ease-out, opacity 0.8s ease-out";
+    document.body.appendChild(el);
+    requestAnimationFrame(()=>{
+      el.style.opacity = "0";
+      el.style.transform = `translate(${dx*1.25}px, ${dy*1.25}px)`;
+    });
+    setTimeout(()=> el.remove(), 900);
+  }
+}
+
+// ---------------------- ECONOMY HELPERS ----------------------
+function getEquipped(){
+  if(!state.equippedAnimalId) return null;
+  return state.animals.find(a=>a.id === state.equippedAnimalId) || null;
+}
+
+function addGold(amount, {silent=false, source=""}={}){
+  if(amount <= 0) return;
+  state.gold += amount;
+  state.stats.goldEarnedTotal += amount;
+  if(!silent) floatText(`+${Math.floor(amount)}💰`);
+  checkAchievements();
+  updateUI();
+}
+
+function spendGold(amount){
+  if(state.gold < amount) return false;
+  state.gold -= amount;
+  state.stats.spendTotal += amount;
+  updateUI();
+  return true;
+}
+
+// ---------------------- LEVEL / EXP ----------------------
+function expNeed(level){
+  return Math.floor(CONFIG.expBaseNeed * Math.pow(CONFIG.expGrowth, level - 1));
+}
+
+function addExp(amount){
+  if(amount <= 0) return;
+  state.exp += amount;
+
+  // multi-level
+  while(true){
+    const need = expNeed(state.level);
+    if(state.exp < need) break;
+    state.exp -= need;
+    state.level++;
+    toast(`레벨 업! Lv ${state.level}`, "good");
+    burst("🎆", 28);
+    screenShake(180);
+
+    // Level up reward
+    const bonusGold = 200 + (state.level * 20);
+    addGold(bonusGold, {silent:true});
+    state.gems += (state.level % 5 === 0) ? 2 : 0; // small gem reward every 5 levels
+    showModal(
+      `레벨 업! Lv ${state.level}`,
+      `더 강해졌다. 레벨업 보상 지급.`,
+      `+${bonusGold}💰${(state.level % 5 === 0) ? " +2💎" : ""}`
+    );
+  }
+  checkAchievements();
+  updateUI();
+}
+
+// ---------------------- FEVER ----------------------
+function addFever(v){
+  const mult = 1 + (state.feverChargeBonus / 100);
+  state.fever = Math.min(100, state.fever + v * mult);
+  if(state.fever >= CONFIG.feverNeed){
+    state.fever = 0;
+    state.buffUntil = Date.now() + CONFIG.feverDurationMs;
+    toast("피버 발동! (10초 더블)", "good");
+    burst("🔥", 30);
+    screenShake(220);
+  }
+  updateUI();
+}
+
+function isBuffOn(){
+  return Date.now() < state.buffUntil;
+}
+
+// ---------------------- CLICKER ----------------------
+function getIdleIncome(){
+  let v = CONFIG.idleBasePerLevel * state.idleLevel;
+
+  // equipped animal passive
+  const eq = getEquipped();
+  if(eq) v *= (1 + eq.clickBonus);
+
+  if(isBuffOn()) v *= 2;
+  return v;
+}
+
+function clickGold(e){
+  let amt = CONFIG.clickBase;
+
+  // equipped passive
+  const eq = getEquipped();
+  if(eq) amt *= (1 + eq.clickBonus);
+
+  const crit = Math.random() < state.critChance;
+  if(crit){
+    amt *= CONFIG.critMulti;
+    state.stats.crits++;
+    burst("✨", 16);
+    screenShake(120);
+    floatText(`CRIT x${CONFIG.critMulti}`, e?.clientX || window.innerWidth/2, e?.clientY || window.innerHeight/2);
+  }
+  state.stats.clicks++;
+
+  if(isBuffOn()) amt *= 2;
+
+  addGold(amt, {silent:true});
+  floatText(`+${Math.floor(amt)}💰`, e?.clientX || window.innerWidth/2, e?.clientY || window.innerHeight/2);
+
+  addFever(2);
+  addExp(1 + (crit ? 2 : 0));
+  checkAchievements();
+  updateUI();
+}
+
+function buyIdle(){
+  const cost = Math.floor(CONFIG.idleBaseCost * Math.pow(CONFIG.idleGrowth, state.idleLevel));
+  if(!spendGold(cost)){
+    toast("골드 부족", "bad");
+    return;
+  }
+  state.idleLevel++;
+  toast(`자동 업그레이드 +1 (Lv ${state.idleLevel})`, "good");
+  addExp(8);
+  addFever(6);
+  checkAchievements();
+  updateUI();
+}
+
+// ---------------------- SLOT (weighted) ----------------------
+const SLOT_SYMBOLS = [
+  { e:"🍒", w:40, onWin:()=>{ addGold(180, {silent:true}); } },
+  { e:"🍀", w:25, onWin:()=>{ addGold(260, {silent:true}); } },
+  { e:"🔥", w:15, onWin:()=>{ state.buffUntil = Date.now() + CONFIG.feverDurationMs; } },
+  { e:"💎", w:7,  onWin:()=>{ state.gems += 4; } },
+  { e:"🐾", w:12, onWin:()=>{ addExp(18); } },
+  { e:"👑", w:1,  onWin:()=>{ state.tickets += 3; state.gems += 2; } }
+];
+
+function pickWeighted(list){
+  const total = list.reduce((s,x)=>s+x.w,0);
+  let r = Math.random() * total;
+  for(const it of list){
+    r -= it.w;
+    if(r <= 0) return it;
+  }
+  return list[list.length-1];
+}
+
+function spinSlot(times=1){
+  const cost = (times===10) ? CONFIG.slotCostTen : CONFIG.slotCost;
+  if(!spendGold(cost)){
+    toast("골드 부족", "bad");
+    return;
+  }
+
+  let lastLine = "";
+  let jackpotsHit = 0;
+
+  for(let t=0;t<times;t++){
+    state.stats.slots++;
+
+    const a = pickWeighted(SLOT_SYMBOLS);
+    const b = pickWeighted(SLOT_SYMBOLS);
+    const c = pickWeighted(SLOT_SYMBOLS);
+    lastLine = `${a.e} ${b.e} ${c.e}`;
+
+    // base reward
+    addExp(2);
+    addFever(6);
+
+    // win
+    if(a.e===b.e && b.e===c.e){
+      jackpotsHit++;
+      state.stats.jackpots++;
+      addGold(500, {silent:true});
+      a.onWin?.();
+
+      burst(a.e, 28);
+      screenShake(220);
+
+      if(a.e==="👑"){
+        showModal("JACKPOT 👑👑👑", "대박이다. 특별 보상 지급.", "+500💰 +3🎟️ +2💎");
+      }else if(a.e==="🔥"){
+        showModal("피버 부스트 🔥🔥🔥", "10초 더블 발동.", "+500💰 +더블(10초)");
+      }else{
+        toast("당첨!", "good");
+      }
+    }
+  }
+
+  $("slotResult").innerText = lastLine + (times===10 ? `   (10회)` : "");
+  if(jackpotsHit>0) addExp(8 + jackpotsHit*3);
+  checkAchievements();
+  updateUI();
+}
+
+// ---------------------- GACHA (SR guarantee + SSR pity) ----------------------
+function rollGachaRarity(){
+  // hard pity
+  if(state.gachaPity >= CONFIG.gachaPitySSR - 1) return "SSR";
+
+  const r = Math.random() * 100;
+  if(r < CONFIG.gachaRates.SSR) return "SSR";
+  if(r < CONFIG.gachaRates.SSR + CONFIG.gachaRates.SR) return "SR";
+  if(r < CONFIG.gachaRates.SSR + CONFIG.gachaRates.SR + CONFIG.gachaRates.R) return "R";
+  return "N";
+}
+
+function animalTemplate(rarity){
+  const pool = {
+    N:  [{name:"강아지", e:"🐶", cb:0.02, bb:0.02}],
+    R:  [{name:"고양이", e:"🐱", cb:0.04, bb:0.04},{name:"토끼", e:"🐰", cb:0.05, bb:0.03}],
+    SR: [{name:"호랑이", e:"🐯", cb:0.07, bb:0.08},{name:"여우", e:"🦊", cb:0.08, bb:0.06}],
+    SSR:[{name:"드래곤", e:"🐲", cb:0.12, bb:0.12},{name:"유니콘", e:"🦄", cb:0.13, bb:0.10}]
+  };
+  const list = pool[rarity] || pool.N;
+  return list[Math.floor(Math.random()*list.length)];
+}
+
+function addAnimal(rarity){
+  const t = animalTemplate(rarity);
+  const id = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  const a = {
+    id,
+    rarity,
+    name: t.name,
+    emoji: t.e,
+    clickBonus: t.cb,
+    battleBonus: t.bb
+  };
+  state.animals.push(a);
+  if(!state.equippedAnimalId) state.equippedAnimalId = a.id;
+  return a;
+}
+
+function drawGacha(times=1){
+  const cost = (times===10) ? CONFIG.gachaCostTen : CONFIG.gachaCost;
+  if(!spendGold(cost)){
+    toast("골드 부족", "bad");
+    return;
+  }
+
+  let textLines = [];
+  let gotSSR = false;
+  let gotSRorBetterInThis10 = false;
+
+  for(let i=0;i<times;i++){
+    state.stats.gachaPulls++;
+    state.gachaPity++;
+    state.gachaSinceSR++;
+
+    let rarity = rollGachaRarity();
+
+    // 10-pull SR guarantee
+    if(times===10 && CONFIG.gachaGuaranteeSR10 && i===9 && !gotSRorBetterInThis10){
+      if(rarity === "N") rarity = "R";
+      if(rarity === "R") rarity = "SR";
+    }
+
+    if(rarity === "SR" || rarity === "SSR") gotSRorBetterInThis10 = true;
+
+    if(rarity === "SSR"){
+      gotSSR = true;
+      state.gachaPity = 0;
+      state.gachaSinceSR = 0;
+      burst("🎆", 34);
+      screenShake(260);
+    }else if(rarity === "SR"){
+      state.gachaSinceSR = 0;
+      burst("✨", 20);
+    }
+
+    const a = addAnimal(rarity);
+    textLines.push(`${rarity} ${a.emoji} ${a.name}`);
+
+    addExp(rarity === "SSR" ? 35 : rarity === "SR" ? 18 : rarity === "R" ? 8 : 3);
+    addFever(rarity === "SSR" ? 18 : rarity === "SR" ? 10 : 6);
+  }
+
+  $("gachaResult").innerText = textLines.join("\n");
+
+  if(gotSSR){
+    showModal("SSR 획득!", "전설급 동물을 얻었다.", "동물 1마리 + EXP");
+  }else{
+    toast("뽑기 완료", "good");
+  }
+
+  checkAchievements();
+  updateUI();
+}
+
+// ---------------------- INVENTORY ----------------------
+function rarityColor(r){
+  if(r==="SSR") return "#ffdd57";
+  if(r==="SR")  return "#9ef";
+  if(r==="R")   return "#b7ffb2";
+  return "#cfcfe9";
+}
+
+function renderInventory(){
+  const eq = getEquipped();
+  $("equippedText").innerText = eq ? `${eq.emoji} ${eq.name} (${eq.rarity})` : "없음";
+
+  if(state.animals.length === 0){
+    $("inventoryList").innerText = "비어 있음";
+    return;
+  }
+
+  const html = state.animals.slice().reverse().map(a=>{
+    const isEq = a.id === state.equippedAnimalId;
+    return `
+      <div class="achItem" style="align-items:center">
+        <div>
+          <div class="achName" style="color:${rarityColor(a.rarity)}">${a.emoji} ${a.name} <span style="font-size:12px;color:#a8a8c7">(${a.rarity})</span></div>
+          <div class="achDesc">클릭 +${Math.round(a.clickBonus*100)}% / 전투 +${Math.round(a.battleBonus*100)}%</div>
+        </div>
+        <div class="achRight">
+          <button class="smallBtn" onclick="equipAnimal('${a.id}')">${isEq ? "장착중" : "장착"}</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  $("inventoryList").innerHTML = html;
+}
+
+function equipAnimal(id){
+  state.equippedAnimalId = id;
+  toast("장착 완료", "good");
+  burst("🐾", 18);
+  addExp(4);
+  updateUI();
+  renderInventory();
+  checkAchievements();
+}
+
+// ---------------------- BATTLE ----------------------
+function battle(){
+  state.stats.battles++;
+
+  // basic loop battle with bonuses
+  let enemy = 100;
+  let player = 100;
+
+  const eq = getEquipped();
+  const battleBonus = eq ? (1 + eq.battleBonus) : 1;
+
+  $("enemyHP").style.width = "100%";
+  $("battleLog").innerText = "전투 중...";
+
+  const tick = setInterval(()=>{
+    // player attack
+    const dmg = 10 * battleBonus * (isBuffOn() ? 1.25 : 1);
+    enemy -= dmg;
+
+    // enemy attack
+    player -= 6;
+
+    $("enemyHP").style.width = Math.max(0, enemy) + "%";
+
+    if(enemy <= 0 || player <= 0){
+      clearInterval(tick);
+
+      if(enemy <= 0){
+        state.stats.wins++;
+
+        const baseGold = 220;
+        const bonusMult = 1 + (state.battleRewardBonus / 100);
+        const winGold = Math.floor(baseGold * bonusMult);
+
+        addGold(winGold, {silent:true});
+        floatText(`+${winGold}💰`);
+        addExp(18);
+        addFever(14);
+
+        // small random drops
+        const roll = Math.random();
+        if(roll < 0.10){ state.tickets += 1; toast("드랍: 🎟️ +1", "good"); burst("🎟️", 16); }
+        else if(roll < 0.13){ state.gems += 1; toast("드랍: 💎 +1", "good"); burst("💎", 16); }
+
+        $("battleLog").innerText = `승리! +${winGold}💰 +EXP`;
+        burst("🎉", 26);
+        screenShake(200);
+      }else{
+        $("battleLog").innerText = "패배...";
+        toast("패배", "bad");
+      }
+
+      checkAchievements();
+      updateUI();
+    }
+  }, 260);
+}
+
+// ---------------------- SHOP ----------------------
+function buyCrit(){
+  const cost = 500;
+  if(!spendGold(cost)){ toast("골드 부족", "bad"); return; }
+  state.critChance = Math.min(0.35, state.critChance + 0.01);
+  toast("크리 확률 증가", "good");
+  burst("✨", 16);
+  addExp(10);
+  addFever(10);
+  checkAchievements();
+  updateUI();
+}
+
+function buyFeverBoost(){
+  const cost = 800;
+  if(!spendGold(cost)){ toast("골드 부족", "bad"); return; }
+  state.feverChargeBonus = Math.min(200, state.feverChargeBonus + 20);
+  toast("피버 충전 증가", "good");
+  burst("🔥", 18);
+  addExp(12);
+  checkAchievements();
+  updateUI();
+}
+
+function buyBattleBoost(){
+  const cost = 700;
+  if(!spendGold(cost)){ toast("골드 부족", "bad"); return; }
+  state.battleRewardBonus = Math.min(200, state.battleRewardBonus + 10);
+  toast("전투 보상 증가", "good");
+  burst("⚔️", 14);
+  addExp(12);
+  checkAchievements();
+  updateUI();
+}
+
+// ---------------------- ACHIEVEMENTS ----------------------
+const ACH = [
+  // visible achievements
+  {
+    id:"click_100",
+    name:"연타 입문자",
+    desc:"클릭 100회 달성",
+    hidden:false,
+    reward:{ gold:300 },
+    cond:()=> state.stats.clicks >= 100
+  },
+  {
+    id:"idle_10",
+    name:"자동화의 맛",
+    desc:"자동 업그레이드 Lv 10 달성",
+    hidden:false,
+    reward:{ gold:600, gems:1 },
+    cond:()=> state.idleLevel >= 10
+  },
+  {
+    id:"slot_50",
+    name:"도박의 손맛",
+    desc:"슬롯 50회 돌리기",
+    hidden:false,
+    reward:{ tickets:3 },
+    cond:()=> state.stats.slots >= 50
+  },
+  {
+    id:"win_10",
+    name:"초보 사냥꾼",
+    desc:"전투 10승 달성",
+    hidden:false,
+    reward:{ gold:800, gems:2 },
+    cond:()=> state.stats.wins >= 10
+  },
+  {
+    id:"level_10",
+    name:"성장 중독",
+    desc:"레벨 10 달성",
+    hidden:false,
+    reward:{ gold:1000, tickets:2 },
+    cond:()=> state.level >= 10
+  },
+
+  // hidden achievements (??? until earned)
+  {
+    id:"secret_jackpot",
+    name:"왕관의 부름",
+    desc:"슬롯에서 👑👑👑 당첨",
+    hidden:true,
+    reward:{ gems:5, tickets:5 },
+    cond:()=> state.stats.jackpots > 0 && (lastJackpotWasCrown === true)
+  },
+  {
+    id:"secret_crit_25",
+    name:"치명타 중독자",
+    desc:"크리티컬 25회 달성",
+    hidden:true,
+    reward:{ gold:777 },
+    cond:()=> state.stats.crits >= 25
+  },
+  {
+    id:"secret_777_gold",
+    name:"행운의 숫자",
+    desc:"보유 골드가 정확히 777이 되는 순간",
+    hidden:true,
+    reward:{ gems:3 },
+    cond:()=> Math.floor(state.gold) === 777
+  },
+  {
+    id:"secret_first_ssr",
+    name:"전설의 시작",
+    desc:"SSR 동물 첫 획득",
+    hidden:true,
+    reward:{ tickets:3, gems:2 },
+    cond:()=> state.animals.some(a=>a.rarity==="SSR")
+  },
+  {
+    id:"secret_big_spender",
+    name:"큰손",
+    desc:"누적 소비 50000💰 달성",
+    hidden:true,
+    reward:{ gems:6 },
+    cond:()=> state.stats.spendTotal >= 50000
+  }
+];
+
+let lastJackpotWasCrown = false;
+
+function grantReward(reward){
+  let parts = [];
+  if(reward.gold){ addGold(reward.gold, {silent:true}); parts.push(`+${reward.gold}💰`); }
+  if(reward.gems){ state.gems += reward.gems; parts.push(`+${reward.gems}💎`); }
+  if(reward.tickets){ state.tickets += reward.tickets; parts.push(`+${reward.tickets}🎟️`); }
+  return parts.join(" ");
+}
+
+function unlockAchievement(a){
+  state.achievements[a.id] = true;
+
+  const rewardText = a.reward ? grantReward(a.reward) : "";
+  burst("🏆", 26);
+  screenShake(220);
+  toast("업적 달성!", "good");
+  showModal(`업적 달성: ${a.name}`, a.desc, rewardText);
+
+  updateUI();
+}
+
+function checkAchievements(){
+  for(const a of ACH){
+    if(state.achievements[a.id]) continue;
+    if(a.cond()){
+      unlockAchievement(a);
+    }
+  }
+}
+
+function renderAchievements(){
+  const html = ACH.map(a=>{
+    const done = !!state.achievements[a.id];
+    const name = (a.hidden && !done) ? "???" : a.name;
+    const desc = (a.hidden && !done) ? "숨겨진 업적" : a.desc;
+    const right = done ? "달성" : (a.hidden ? "비밀" : "진행중");
+    return `
+      <div class="achItem">
+        <div>
+          <div class="achName">${done ? "🏆" : "🔒"} ${name}</div>
+          <div class="achDesc">${desc}</div>
+        </div>
+        <div class="achRight">${right}</div>
+      </div>
+    `;
+  }).join("");
+
+  $("achList").innerHTML = html;
+}
+
+function renderStats(){
+  $("statClicks").innerText = state.stats.clicks;
+  $("statCrits").innerText = state.stats.crits;
+  $("statSlots").innerText = state.stats.slots;
+  $("statJackpots").innerText = state.stats.jackpots;
+  $("statWins").innerText = state.stats.wins;
+  $("statGoldTotal").innerText = Math.floor(state.stats.goldEarnedTotal);
+}
+
+// ---------------------- SLOT JACKPOT FLAG HOOK ----------------------
+const _spinSlot = spinSlot;
+spinSlot = function(times=1){
+  lastJackpotWasCrown = false;
+
+  // wrap original but detect crown jackpot within this call
+  const beforeJackpots = state.stats.jackpots;
+  const beforeGems = state.gems;
+  _spinSlot(times);
+
+  // detection: if jackpot increased and last visible line is crown triple
+  const line = $("slotResult").innerText || "";
+  if(state.stats.jackpots > beforeJackpots && line.includes("👑 👑 👑")){
+    lastJackpotWasCrown = true;
+    // re-check to unlock crown secret immediately
+    checkAchievements();
+    if(state.gems > beforeGems) {} // no-op
+  }
+};
+
+// ---------------------- DEV PANEL (7 taps + SHA-256 hash) ----------------------
+// IMPORTANT: replace with your sha256("your_password") hex string
+const ADMIN_HASH = "PUT_YOUR_SHA256_HASH_HERE";
+
+let __logoTap = 0;
+
+async function sha256Hex(str){
+  const data = new TextEncoder().encode(str);
+  const buf = await crypto.subtle.digest("SHA-256", data);
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+async function openAdminGate(){
+  const pw = prompt("Admin password");
+  if(!pw) return;
+  const h = await sha256Hex(pw);
+  if(h === ADMIN_HASH){
+    sessionStorage.setItem("isAdmin","1");
+    $("devPanel").classList.remove("hidden");
+    go("devPanel");
+    toast("Admin enabled", "good");
+    burst("✨", 18);
+  }else{
+    toast("Access denied", "bad");
+    screenShake(140);
+  }
+}
+
+$("logo").addEventListener("click", async ()=>{
+  __logoTap++;
+  if(__logoTap >= 7){
+    __logoTap = 0;
+    await openAdminGate();
+  }
+});
+
+if(sessionStorage.getItem("isAdmin")==="1"){
+  $("devPanel").classList.remove("hidden");
+}
+
+// ---------------------- CHEATS ----------------------
+function cheatAddGold(v){ addGold(v); }
+function cheatAddGems(v){ state.gems += v; updateUI(); }
+function cheatAddTickets(v){ state.tickets += v; updateUI(); }
+function cheatForceJackpot(){
+  $("slotResult").innerText = "👑 👑 👑";
+  state.stats.slots++;
+  state.stats.jackpots++;
+  lastJackpotWasCrown = true;
+  addGold(1500);
+  state.tickets += 5;
+  state.gems += 5;
+  burst("👑", 34);
+  screenShake(240);
+  checkAchievements();
+  updateUI();
+}
+function cheatForceSSR(){
+  const a = addAnimal("SSR");
+  $("gachaResult").innerText = `SSR ${a.emoji} ${a.name}`;
+  burst("🎆", 34);
+  screenShake(260);
+  addExp(40);
+  checkAchievements();
+  updateUI();
+}
+function cheatReset(){
+  if(!confirm("진짜 초기화?")) return;
+  localStorage.removeItem("casinoV2_full");
+  location.reload();
+}
+
+// ---------------------- DOUBLE TAP ZOOM PREVENT (iOS) ----------------------
+let lastTouch = 0;
+document.addEventListener("touchend", (e)=>{
+  const now = Date.now();
+  if(now - lastTouch <= 300){
+    e.preventDefault();
+  }
+  lastTouch = now;
+}, {passive:false});
+
+// ---------------------- GAME LOOP ----------------------
+setInterval(()=>{
+  // idle income tick (10 per sec)
+  const gain = getIdleIncome() / 10;
+  if(gain > 0){
+    addGold(gain, {silent:true});
+    // tiny exp from idle (low)
+    state.exp += 0.02;
+    // level check occasionally
+    if(Math.random() < 0.1) addExp(0); // triggers level check sometimes
+  }
+
+  // fever background vibe
+  if(isBuffOn()){
+    document.body.style.background = "radial-gradient(900px 520px at 50% -10%, #3a1266 0%, #0d0d18 60%)";
+  }else{
+    document.body.style.background = "#0d0d18";
+  }
+
+  // periodic checks & save
+  checkAchievements();
+  updateUI();
+  save();
+}, 100);
+
+// initial render
+updateUI();
+renderAchievements();
+renderStats();
+</script>
+
+</body>
+</html>
