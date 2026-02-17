@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>동물 왕국 카지노</title>
+
+<style>
+body{
+  margin:0;
+  font-family:sans-serif;
+  background:#111;
+  color:white;
+  text-align:center;
+}
+button{
+  font-size:18px;
+  padding:10px;
+  margin:5px;
+}
+.panel{
+  padding:10px;
+  border-top:1px solid #333;
+}
+.floating{
+  position:absolute;
+  animation:floatUp 1s ease-out forwards;
+  pointer-events:none;
+}
+@keyframes floatUp{
+  0%{opacity:1; transform:translateY(0);}
+  100%{opacity:0; transform:translateY(-50px);}
+}
+.hidden{ display:none; }
+</style>
+</head>
+
+<body>
+
+<h2>🐾 동물 왕국 카지노 👑</h2>
+
+<div id="topBar">
+  💰 <span id="gold">0</span> |
+  💎 <span id="gems">0</span> |
+  🎟️ <span id="tickets">0</span>
+</div>
+
+<div class="panel">
+  <h3>💰 클릭커</h3>
+  <button onclick="clickGold(event)">💰 탭!</button>
+  <div>자동 수익: <span id="idleRate">0</span>/초</div>
+  <button onclick="buyIdle()">자동 업그레이드</button>
+</div>
+
+<div class="panel">
+  <h3>🎰 슬롯 (100💰)</h3>
+  <button onclick="spinSlot()">슬롯 돌리기</button>
+  <div id="slotResult"></div>
+</div>
+
+<div class="panel">
+  <h3>🎲 동물 가챠 (300💰)</h3>
+  <button onclick="drawGacha()">1회 뽑기</button>
+  <div id="gachaResult"></div>
+</div>
+
+<div class="panel">
+  <h3>🐶 전투</h3>
+  <button onclick="battle()">전투 시작</button>
+  <div id="battleLog"></div>
+</div>
+
+<div class="panel">
+  <button onclick="unlockSound()">🔊 사운드 켜기</button>
+</div>
+
+<div id="devPanel" class="panel hidden">
+  <h3>관리자 패널</h3>
+  <button onclick="addGold(100000)">+100000 골드</button>
+  <button onclick="addGems(1000)">+1000 젬</button>
+  <button onclick="forceJackpot()">슬롯 잭팟</button>
+</div>
+
+<script>
+const CONFIG = {
+  click: 1,
+  critChance: 0.1,
+  critMulti: 5,
+  idleRate: 0.5,
+  idleCost: 15,
+  idleGrowth: 1.4,
+  slotCost: 100,
+  gachaCost: 300,
+  pity: 0
+};
+
+let state = {
+  gold: 0,
+  gems: 0,
+  tickets: 0,
+  idleLevel: 0,
+  lastSave: Date.now(),
+  buffUntil: 0
+};
+
+let audioUnlocked = false;
+
+function save(){
+  localStorage.setItem("casinoSave", JSON.stringify(state));
+}
+
+function load(){
+  let data = localStorage.getItem("casinoSave");
+  if(data){
+    state = JSON.parse(data);
+    let offline = Math.floor((Date.now()-state.lastSave)/1000);
+    state.gold += offline * getIdleIncome();
+  }
+}
+load();
+
+function updateUI(){
+  document.getElementById("gold").innerText = Math.floor(state.gold);
+  document.getElementById("gems").innerText = state.gems;
+  document.getElementById("tickets").innerText = state.tickets;
+  document.getElementById("idleRate").innerText = getIdleIncome().toFixed(1);
+}
+
+function getIdleIncome(){
+  let base = CONFIG.idleRate * state.idleLevel;
+  if(Date.now() < state.buffUntil) base *= 2;
+  return base;
+}
+
+function clickGold(e){
+  let amount = CONFIG.click;
+  if(Math.random() < CONFIG.critChance){
+    amount *= CONFIG.critMulti;
+    showFloat("CRIT x"+CONFIG.critMulti, e);
+  }
+  state.gold += amount;
+  updateUI();
+}
+
+function buyIdle(){
+  let cost = CONFIG.idleCost * Math.pow(CONFIG.idleGrowth, state.idleLevel);
+  if(state.gold >= cost){
+    state.gold -= cost;
+    state.idleLevel++;
+    updateUI();
+  }
+}
+
+function spinSlot(){
+  if(state.gold < CONFIG.slotCost) return;
+  state.gold -= CONFIG.slotCost;
+
+  let symbols = ["🍒","🍀","🔥","🐾","💎","👑"];
+  let result = [
+    symbols[Math.floor(Math.random()*symbols.length)],
+    symbols[Math.floor(Math.random()*symbols.length)],
+    symbols[Math.floor(Math.random()*symbols.length)]
+  ];
+  document.getElementById("slotResult").innerText = result.join(" ");
+
+  if(result[0]===result[1] && result[1]===result[2]){
+    if(result[0]==="🔥"){
+      state.buffUntil = Date.now()+10000;
+    }
+    if(result[0]==="💎"){
+      state.gems+=5;
+    }
+    if(result[0]==="👑"){
+      state.tickets+=5;
+    }
+    state.gold += 500;
+  }
+  updateUI();
+}
+
+function drawGacha(){
+  if(state.gold < CONFIG.gachaCost) return;
+  state.gold -= CONFIG.gachaCost;
+  CONFIG.pity++;
+
+  let roll = Math.random()*100;
+  let result="N 🐶";
+
+  if(CONFIG.pity>=80){
+    result="SSR 🐲";
+    CONFIG.pity=0;
+  }else if(roll<0.5){
+    result="SSR 🐲";
+    CONFIG.pity=0;
+  }else if(roll<5){
+    result="SR 🐯";
+  }else if(roll<30){
+    result="R 🐱";
+  }
+
+  document.getElementById("gachaResult").innerText = result;
+  updateUI();
+}
+
+function battle(){
+  let enemyHP=50;
+  let playerHP=100;
+  while(enemyHP>0 && playerHP>0){
+    enemyHP-=10;
+    playerHP-=5;
+  }
+  if(playerHP>0){
+    state.gold+=200;
+    document.getElementById("battleLog").innerText="승리! +200💰";
+  }else{
+    document.getElementById("battleLog").innerText="패배...";
+  }
+  updateUI();
+}
+
+function unlockSound(){
+  let a = new Audio();
+  a.play().then(()=>{audioUnlocked=true;});
+}
+
+function showFloat(text,e){
+  let el=document.createElement("div");
+  el.className="floating";
+  el.innerText=text;
+  el.style.left=e.clientX+"px";
+  el.style.top=e.clientY+"px";
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1000);
+}
+
+function addGold(v){ state.gold+=v; updateUI(); }
+function addGems(v){ state.gems+=v; updateUI(); }
+function forceJackpot(){
+  document.getElementById("slotResult").innerText="👑 👑 👑";
+  state.gold+=1000;
+  updateUI();
+}
+
+let tapCount=0;
+document.querySelector("h2").addEventListener("click",()=>{
+  tapCount++;
+  if(tapCount>=7){
+    document.getElementById("devPanel").classList.remove("hidden");
+  }
+});
+
+setInterval(()=>{
+  state.gold += getIdleIncome()/10;
+  updateUI();
+  save();
+},100);
+
+updateUI();
+</script>
+</body>
+</html>
