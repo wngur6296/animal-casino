@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Animal Casino V3</title>
+
+<style>
+*{box-sizing:border-box;touch-action:manipulation;user-select:none;}
+body{margin:0;font-family:system-ui;background:#0d0d18;color:white;}
+header{padding:10px;background:#15152a;border-bottom:1px solid #222;}
+.logo{font-weight:900;cursor:pointer;}
+.wallet{display:flex;gap:12px;font-size:14px;margin-top:6px;}
+.screen{display:none;padding:15px;}
+.screen.active{display:block;}
+button{padding:10px;margin:5px;background:#222;color:white;border:1px solid #444;border-radius:8px;}
+button:active{transform:scale(.95);box-shadow:0 0 15px cyan;}
+.bar{height:12px;background:#333;border-radius:6px;overflow:hidden;margin:5px 0;}
+.fill{height:100%;background:linear-gradient(90deg,#2bd6ff,#a86bff);width:50%;transition:.3s;}
+.hidden{display:none;}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="logo" id="logo">🐾 Animal Casino 👑</div>
+<div class="wallet">
+💰 <span id="gold">0</span>
+💎 <span id="gems">0</span>
+🎟️ <span id="tickets">0</span>
+Lv <span id="level">1</span>
+</div>
+</header>
+
+<div id="lobby" class="screen active">
+<h2>🏠 로비</h2>
+<button onclick="go('clicker')">💰 클릭커</button>
+<button onclick="go('slot')">🎰 슬롯</button>
+<button onclick="go('pet')">🐾 펫 관리</button>
+<button onclick="go('progress')">🏆 업적</button>
+</div>
+
+<div id="clicker" class="screen">
+<h2>💰 클릭커</h2>
+<button onclick="clickGold()">💰 탭</button>
+<div>자동수익: <span id="idleRate">0</span>/초</div>
+<button onclick="buyIdle()">자동 업그레이드</button>
+<button onclick="go('lobby')">⬅</button>
+</div>
+
+<div id="slot" class="screen">
+<h2>🎰 슬롯</h2>
+<button onclick="spinSlot()">100💰 돌리기</button>
+<div id="slotResult"></div>
+<button onclick="go('lobby')">⬅</button>
+</div>
+
+<div id="pet" class="screen">
+<h2>🐶 펫 관리</h2>
+<div id="petName"></div>
+
+🍖 배고픔
+<div class="bar"><div id="hungerBar" class="fill"></div></div>
+
+😴 피로도
+<div class="bar"><div id="fatigueBar" class="fill"></div></div>
+
+❤️ 애정도
+<div class="bar"><div id="loveBar" class="fill"></div></div>
+
+<button onclick="feedPet()">🍖 먹이주기 (200💰)</button>
+<button onclick="petPet()">❤️ 쓰다듬기</button>
+<button onclick="sleepPet()">😴 재우기</button>
+
+<button onclick="go('lobby')">⬅</button>
+</div>
+
+<div id="progress" class="screen">
+<h2>🏆 업적</h2>
+<div id="achList"></div>
+<button onclick="go('lobby')">⬅</button>
+</div>
+
+<script>
+
+// ---------- STATE ----------
+let state={
+gold:0,gems:0,tickets:0,
+level:1,exp:0,
+idle:0,
+pet:{
+name:"🐶 햄펫",
+hunger:80,
+fatigue:20,
+love:80,
+level:1,
+exp:0
+},
+stats:{clicks:0,jackpots:0},
+ach:{},
+lastSave:Date.now()
+};
+
+// ---------- SAVE ----------
+function save(){
+state.lastSave=Date.now();
+localStorage.setItem("casinoV3",JSON.stringify(state));
+}
+function load(){
+let d=localStorage.getItem("casinoV3");
+if(d){
+state=JSON.parse(d);
+let offline=Math.floor((Date.now()-state.lastSave)/1000);
+state.gold+=offline*getIdleIncome();
+}
+}
+load();
+
+// ---------- UI ----------
+function updateUI(){
+gold.innerText=Math.floor(state.gold);
+gems.innerText=state.gems;
+tickets.innerText=state.tickets;
+level.innerText=state.level;
+idleRate.innerText=getIdleIncome().toFixed(1);
+
+hungerBar.style.width=state.pet.hunger+"%";
+fatigueBar.style.width=state.pet.fatigue+"%";
+loveBar.style.width=state.pet.love+"%";
+
+petName.innerText=state.pet.name+" Lv."+state.pet.level;
+renderAch();
+}
+function go(id){
+document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+document.getElementById(id).classList.add("active");
+}
+
+// ---------- ECON ----------
+function petBuff(){
+let bonus=1;
+if(state.pet.hunger>80) bonus+=0.2;
+if(state.pet.love>80) bonus+=0.2;
+if(state.pet.fatigue>80) bonus-=0.3;
+if(state.pet.hunger>90 && state.pet.love>90 && state.pet.fatigue<20) bonus+=0.3;
+return bonus;
+}
+
+function getIdleIncome(){
+return state.idle*0.5*petBuff();
+}
+
+function clickGold(){
+let amt=1*petBuff();
+state.gold+=amt;
+state.exp+=1;
+state.pet.exp+=1;
+state.stats.clicks++;
+checkLevel();
+checkPetLevel();
+updateUI();
+}
+
+// ---------- SLOT ----------
+function spinSlot(){
+if(state.gold<100)return;
+state.gold-=100;
+let arr=["🍒","🍀","🔥","💎","👑"];
+let r=[rand(arr),rand(arr),rand(arr)];
+slotResult.innerText=r.join(" ");
+if(r[0]==r[1]&&r[1]==r[2]){
+state.gold+=500*petBuff();
+state.stats.jackpots++;
+}
+updateUI();
+}
+function rand(a){return a[Math.floor(Math.random()*a.length)];}
+
+// ---------- PET ----------
+function feedPet(){
+if(state.gold<200)return;
+state.gold-=200;
+state.pet.hunger=Math.min(100,state.pet.hunger+30);
+updateUI();
+}
+function petPet(){
+state.pet.love=Math.min(100,state.pet.love+10);
+}
+function sleepPet(){
+state.pet.fatigue=Math.max(0,state.pet.fatigue-40);
+}
+
+// 자연 감소
+setInterval(()=>{
+state.pet.hunger=Math.max(0,state.pet.hunger-0.05);
+state.pet.love=Math.max(0,state.pet.love-0.03);
+state.pet.fatigue=Math.min(100,state.pet.fatigue+0.04);
+state.gold+=getIdleIncome()/10;
+updateUI();
+save();
+},100);
+
+// ---------- LEVEL ----------
+function checkLevel(){
+let need=50*Math.pow(1.2,state.level-1);
+if(state.exp>=need){
+state.exp=0;
+state.level++;
+state.gold+=500;
+}
+}
+function checkPetLevel(){
+if(state.pet.exp>=100){
+state.pet.exp=0;
+state.pet.level++;
+}
+}
+
+// ---------- ACH ----------
+const achievements=[
+{id:"click100",name:"연타 입문",cond:()=>state.stats.clicks>=100,reward:"💰500"},
+{id:"jackpot",name:"왕관의 주인",cond:()=>state.stats.jackpots>=1,reward:"💎3"}
+];
+
+function renderAch(){
+achList.innerHTML=achievements.map(a=>{
+let done=state.ach[a.id];
+return `<div>${done?"🏆":"🔒"} ${done?a.name:"???"}</div>`;
+}).join("");
+}
+
+function checkAch(){
+achievements.forEach(a=>{
+if(!state.ach[a.id] && a.cond()){
+state.ach[a.id]=true;
+if(a.id=="click100")state.gold+=500;
+if(a.id=="jackpot")state.gems+=3;
+alert("업적 달성: "+a.name);
+}
+});
+}
+
+// ---------- ADMIN 7 TAP ----------
+const ADMIN_HASH="PUT_YOUR_HASH";
+let taps=0;
+logo.addEventListener("click",async()=>{
+taps++;
+if(taps>=7){
+taps=0;
+let pw=prompt("Admin password");
+let h=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(pw));
+let hex=[...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,"0")).join("");
+if(hex===ADMIN_HASH){
+alert("Admin Mode");
+}
+}
+});
+
+// ---------- INIT ----------
+updateUI();
+
+</script>
+</body>
+</html>
